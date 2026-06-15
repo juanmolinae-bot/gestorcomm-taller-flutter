@@ -2,27 +2,22 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/incidencia.dart';
 
-// Esta clase centraliza las llamadas a la api Flask.
-// Si cambia la URL del backend solo hay que editar acá.
 class ApiService {
-  // URL del backend expuesto via ngrok
-  // OJO: en plan free de ngrok la URL cambia cada vez, hay que actualizar
-  // Si pruebo con emulador y la api corre local: usar 'http://10.0.2.2:5000'
+  // IMPORTANTE: cambiar esta URL por la que entrega ngrok cuando se exponga la API.
+  // Ejemplo: 'https://abc123.ngrok-free.app'
+  // Si se prueba con emulador Android y la API corre en el PC, usar: 'http://10.0.2.2:5000'
   static const String baseUrl = 'https://family-extended-tutu.ngrok-free.dev';
 
-  // headers comunes para todas las llamadas
-  // el ngrok-skip-browser-warning es para que ngrok no devuelva la pagina html de aviso
-  Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
-  };
-
+  // ---------- LISTAR ----------
   Future<List<Incidencia>> listarIncidencias({String? filtroEstado}) async {
     final url = filtroEstado != null
         ? '$baseUrl/api/incidencias?estado=$filtroEstado'
         : '$baseUrl/api/incidencias';
 
-    final response = await http.get(Uri.parse(url), headers: _headers);
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'ngrok-skip-browser-warning': 'true'},
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -32,10 +27,11 @@ class ApiService {
     }
   }
 
+  // ---------- OBTENER UNA ----------
   Future<Incidencia> obtenerIncidencia(int id) async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/incidencias/$id'),
-      headers: _headers,
+      headers: {'ngrok-skip-browser-warning': 'true'},
     );
 
     if (response.statusCode == 200) {
@@ -45,14 +41,17 @@ class ApiService {
     }
   }
 
+  // ---------- CREAR ----------
   Future<Incidencia> crearIncidencia(Incidencia incidencia) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/incidencias'),
-      headers: _headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: json.encode(incidencia.toJson()),
     );
 
-    // 201 = created
     if (response.statusCode == 201) {
       return Incidencia.fromJson(json.decode(response.body));
     } else {
@@ -60,10 +59,14 @@ class ApiService {
     }
   }
 
+  // ---------- ACTUALIZAR ----------
   Future<Incidencia> actualizarIncidencia(int id, Incidencia incidencia) async {
     final response = await http.put(
       Uri.parse('$baseUrl/api/incidencias/$id'),
-      headers: _headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: json.encode(incidencia.toJson()),
     );
 
@@ -74,10 +77,11 @@ class ApiService {
     }
   }
 
+  // ---------- ELIMINAR ----------
   Future<void> eliminarIncidencia(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/api/incidencias/$id'),
-      headers: _headers,
+      headers: {'ngrok-skip-browser-warning': 'true'},
     );
 
     if (response.statusCode != 200) {

@@ -1,127 +1,102 @@
 # GestorComm Flutter
 
-App móvil Flutter que consume la API REST en Flask para gestionar incidencias.
+Aplicaciòn movil en Flutter que se conecta a la API en Flask (carpeta `gestorcomm-api/`) para gestionar incidencias de comisionamiento elèctrico.
 
-Parte del Taller de Desarrollo Web y Móvil (APTC106) — Universidad Andrés Bello.
+Esta aplicaciòn es la parte mòvil del proyecto del examen del Taller de Desarrollo Web y Móvil (APTC106) de la UAB.
 
 ## Arquitectura
 
-```
-[ App Flutter ] ───HTTPS───► [ Ngrok ] ───► [ Flask API ] ───► [ SQLite ]
-   (celular o emulador)         (tunnel)      (PC localhost)     (file)
-```
+App Flutter (Android) → llamadas HTTPS → Ngrok tunnel → Flask API en el PC → SQLite
+
+El celular no puede llegar directo a la api en mi maquina, por eso uso ngrok como puente.
 
 ## Pantallas
 
-1. **Lista de incidencias** con filtros por estado (chips), pull-to-refresh
-2. **Detalle** de cada incidencia con botones Editar y Eliminar
-3. **Formulario** para crear o editar (mismo widget, modo controlado por parámetro)
+Son 4 pantallas en total:
+
+1. **Home** con el dashboard de resumen (cuantas abiertas, en revisiòn, cerradas) y las incidencias más recientes.
+2. **Lista de incidencias** con filtros por estado y pull-to-refresh
+3. **Detalle** de cada incidencia con botones para editar o eliminar
+4. **Formulario** que sirve para crear y para editar (el mismo widget, solo cambia el modo segun el parametro)
 
 ## Stack
 
 - Flutter 3.x con Material 3
-- Package `http` para llamadas REST
-- Sin state management externo (solo StatefulWidget + FutureBuilder)
+- Package `http` para las llamadas REST
+- Sin state management externo, solo `StatefulWidget` + `FutureBuilder` (es un proyecto chico, no se justifica meter Provider o BLoC).
 
-## Instalación de Flutter en Linux Mint
+## Como correrlo
+
+Para Linux Mint, no probé en otros SO.
 
 ```bash
-# Si aún no tienes Flutter:
+# instalar flutter si no esta
 sudo snap install flutter --classic
 
-# Verificar
+# verificar
 flutter doctor
 ```
 
-`flutter doctor` te dirá si te falta algo (Android SDK, licencias, etc).
+`flutter doctor` te avisa si falta algo (Android SDK, licencias, etc).
 
-## Setup del proyecto
+Setup:
 
 ```bash
 cd gestorcomm_flutter
 flutter pub get
 ```
 
-## Configurar la URL de la API
-
-Edita `lib/services/api_service.dart` y cambia la constante `baseUrl`:
+Antes de correr hay que editar `lib/services/api_service.dart` y cambiar la URL del backend por la que entrega ngrok:
 
 ```dart
-static const String baseUrl = 'https://TU-URL-DE-NGROK.ngrok-free.app';
+static const String baseUrl = 'https://TU-URL-DE-NGROK.ngrok-free.dev';
 ```
 
-Para obtener la URL de ngrok:
+Despues:
 
 ```bash
-# En el proyecto de la API
-cd ../gestorcomm-api
-ngrok http 5000
-```
-
-Copia la URL `https://...ngrok-free.app` que aparece y pégala en el `api_service.dart`.
-
-## Ejecutar la app
-
-**En emulador Android:**
-
-```bash
-# Lanzar emulador desde Android Studio o desde CLI:
-flutter emulators
-flutter emulators --launch <emulator_id>
-
-# En el proyecto Flutter:
-flutter run
-```
-
-**En celular físico conectado por USB:**
-
-```bash
-# Verificar que el celular se ve:
+# verificar dispositivos conectados (deberia aparecer mi celular)
 flutter devices
 
-# Correr:
+# correr en debug
 flutter run
-```
 
-## Generar el APK
-
-```bash
+# o generar el APK release
 flutter build apk --release
 ```
 
-El APK queda en: `build/app/outputs/flutter-apk/app-release.apk`
+El APK queda en `build/app/outputs/flutter-apk/app-release.apk` (~21 MB).
 
-Para instalarlo en un celular conectado:
+Para instalarlo:
 
 ```bash
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
-## Estructura
+## Estructura del codigo
 
 ```
 gestorcomm_flutter/
 ├── pubspec.yaml
 ├── lib/
-│   ├── main.dart                           ← entry point
+│   ├── main.dart                 → entry point, define el theme
 │   ├── models/
-│   │   └── incidencia.dart                 ← modelo de datos
+│   │   └── incidencia.dart       → el modelo de datos
 │   ├── services/
-│   │   └── api_service.dart                ← cliente HTTP
+│   │   └── api_service.dart      → cliente http hacia la api
 │   └── screens/
-│       ├── lista_screen.dart               ← pantalla principal
-│       ├── detalle_screen.dart             ← detalle individual
-│       └── formulario_screen.dart          ← crear/editar
-└── android/
-    └── (configuración Android Studio)
+│       ├── home_screen.dart      → dashboard con resumen
+│       ├── lista_screen.dart     → lista con filtros
+│       ├── detalle_screen.dart   → detalle individual
+│       └── formulario_screen.dart → crear/editar
+└── android/                      → configuracion nativa
 ```
 
 ## Notas
 
-- Si la API está caída o ngrok cambió de URL, la app muestra un error con botón "Reintentar".
-- La cabecera `'ngrok-skip-browser-warning': 'true'` se incluye en todos los requests para saltarse la página de advertencia que ngrok muestra a navegadores.
-- La app NO tiene autenticación (es un MVP), cualquiera con la URL puede llamar a la API.
+- Si la API esta caida o si ngrok cambió de URL, la app muestra un error con boton "Reintentar" (esto pasa harto porque ngrok free se cae si esta inactivo).
+- La cabecera `ngrok-skip-browser-warning: true` esta en todas las llamadas, sino ngrok devuelve una pagina html en vez del JSON.
+- En el AndroidManifest hay que agregar el permiso `INTERNET`, sino el build release no puede hacer llamadas (la debug si pero la release no, eso me costo un rato darme cuenta).
+- La app no tiene login. Es un MVP, no consideré cuentas de usuario para esta versión del trabajo.
 
-## Autor
-
-Juan Molina Escalante – APTC106 – 2026
+Juan Molina E

@@ -1,7 +1,7 @@
 """
-GestorComm API - Flask REST con SQLite
-APTC106 - Taller de Desarrollo Web y Móvil
-Juan Molina Escalante
+GestorComm API - Flask con SQLite
+Examen Taller Web y Movil - UAB
+Juan Molina E
 """
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -10,12 +10,10 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # permite que la app Flutter consuma desde otro origen
+CORS(app)  # necesario para que la app flutter pueda llamar desde otro origen
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'gestorcomm.db')
 
-
-# ---------- DB helpers ----------
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -24,7 +22,7 @@ def get_db():
 
 
 def init_db():
-    """Crea la tabla si no existe."""
+    # crea la tabla si no existe todavia
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
@@ -43,13 +41,13 @@ def init_db():
 
 
 def row_to_dict(row):
+    # helper para convertir sqlite3.Row a dict (porque jsonify no lo hace solo)
     return {k: row[k] for k in row.keys()}
 
 
-# ---------- Endpoints ----------
-
 @app.route('/')
 def home():
+    # endpoint raiz, solo informativo
     return jsonify({
         'name': 'GestorComm API',
         'version': '1.0',
@@ -65,7 +63,8 @@ def home():
 
 @app.route('/api/incidencias', methods=['GET'])
 def listar_incidencias():
-    """Listar todas las incidencias. Opcionalmente filtrar por estado."""
+    # lista todas las incidencias, ordenadas por fecha mas reciente primero
+    # opcional: filtrar por estado con ?estado=abierta
     conn = get_db()
     estado = request.args.get('estado')
     if estado:
@@ -94,6 +93,7 @@ def obtener_incidencia(pk):
 @app.route('/api/incidencias', methods=['POST'])
 def crear_incidencia():
     data = request.get_json()
+    # validacion minima: titulo y zona son obligatorios, el resto tiene default
     if not data or not data.get('titulo') or not data.get('zona'):
         return jsonify({'error': 'titulo y zona son obligatorios'}), 400
 
@@ -129,7 +129,7 @@ def actualizar_incidencia(pk):
         conn.close()
         return jsonify({'error': 'Incidencia no encontrada'}), 404
 
-    # solo actualizamos los campos que vinieron
+    # si un campo no viene en el body, dejo el valor anterior
     titulo = data.get('titulo', row['titulo'])
     descripcion = data.get('descripcion', row['descripcion'])
     zona = data.get('zona', row['zona'])
@@ -162,10 +162,9 @@ def eliminar_incidencia(pk):
     return jsonify({'mensaje': 'Incidencia eliminada', 'id': pk})
 
 
-# ---------- Arranque ----------
-
 if __name__ == '__main__':
     init_db()
+    # TODO: en algun momento agregar autenticacion, por ahora la api es abierta
     print("=" * 50)
     print(" GestorComm API - corriendo en http://0.0.0.0:5000")
     print(" Para exponer con ngrok: ngrok http 5000")
